@@ -18,6 +18,7 @@ data = {
 }
 
 
+
 def promedio_movil(n, data):
     i = 0
     keys = list(data.keys())
@@ -36,8 +37,8 @@ def promedio_movil(n, data):
         
         # Store the average of current
         # window in moving average list
-        
-        subdict[keys[i+n]] = {"demanda" : data[keys[i+n]], "forecast" : window_average }
+        if keys[i+n].split("/")[1] == "25": 
+            subdict[keys[i+n]] = {"demanda" : data[keys[i+n]], "forecast" : window_average }
 
         # Shift window to right by one position
         i += 1
@@ -56,8 +57,10 @@ def naive(data):
         # Store elements from i to i+window_size
         # in list to get the current window
         forecast = list(data.values())[i-1]
+        
+        if keys[i].split("/")[1] == "25": 
 
-        subdict[keys[i]] = {"demanda" : data[keys[i]], "forecast" : forecast }
+            subdict[keys[i]] = {"demanda" : data[keys[i]], "forecast" : forecast }
 
         # Shift window to right by one position
         i += 1
@@ -70,19 +73,43 @@ def acumulado(data):
 
     # Loop through the array to consider
     # every window of size 3
-    while i < len(data):
+    while i < len(data) - 1:
         
         # Store elements from i to i+window_size
         # in list to get the current window
         window = list(data.values())[0 : i+1]
 
         # Calculate the average of current window
-        window_average = round(sum(window) / (i+1), 2)
+        window_average = sum(window) / (len(window))
         
         # Store the average of current
         # window in moving average list
+        if keys[i+1].split("/")[1] == "25": 
+            subdict[keys[i+1]] = {"demanda" : data[keys[i+1]], "forecast" : window_average }
+
+        # Shift window to right by one position
+        i += 1
+    return subdict
+
+def acumulado_no_restringido(data):
+    i = 0
+    keys = list(data.keys())
+    subdict = data.copy()
+
+    # Loop through the array to consider
+    # every window of size 3
+    while i < len(data) - 1:
         
-        subdict[keys[i]] = {"demanda" : data[keys[i]], "forecast" : window_average }
+        # Store elements from i to i+window_size
+        # in list to get the current window
+        window = list(data.values())[0 : i+1]
+
+        # Calculate the average of current window
+        window_average = sum(window) / (len(window))
+        
+        # Store the average of current
+        # window in moving average list
+        subdict[keys[i+1]] = {"demanda" : data[keys[i+1]], "forecast" : window_average }
 
         # Shift window to right by one position
         i += 1
@@ -90,6 +117,7 @@ def acumulado(data):
 
 def exponencial(i_forecast,alfa,data):
     i = 0
+    j = 0
     keys = list(data.keys())
     subdict = data.copy()
     fcast = 0
@@ -97,11 +125,12 @@ def exponencial(i_forecast,alfa,data):
     # every window of size 3
     while i < len(data) :
         
-        if i == 0:
-            subdict[keys[i]] = {"demanda" : data[keys[i]], "forecast" : i_forecast }
-            fcast = i_forecast
+        if j == 0 and keys[i].split("/")[1] == "25":
+            fcast = i_forecast * (1 - alfa) + data[keys[i-1]] * alfa
+            subdict[keys[i]] = {"demanda" : data[keys[i]], "forecast" : fcast}
             i += 1
-        else:
+            j += 1
+        elif keys[i].split("/")[1] == "25":
             # Store elements from i to i+window_size
             # in list to get the current window
             window = list(data.values())[i-1]
@@ -116,6 +145,8 @@ def exponencial(i_forecast,alfa,data):
 
             # Shift window to right by one position
             fcast = window_average
+            i += 1
+        else:
             i += 1
     return subdict
 
@@ -141,15 +172,17 @@ def weighted_moving_average(w: list, data):
         # Store the average of current
         # window in moving average list
         
-        subdict[keys[i + len(w)]] = {"demanda" : data[keys[i + len(w)]], "forecast" : window_average }
+        if keys[i + len(w)].split("/")[1] == "25": 
+            subdict[keys[i + len(w)]] = {"demanda" : data[keys[i + len(w)]], "forecast" : window_average }
 
         # Shift window to right by one position
         i += 1
     return subdict
 
 def regresion(data):
-    x = np.array(range(1, len(data)+1))
-    y = np.array(list(data.values()))
+    subdict = {k: v for k, v in data.items() if k.split("/")[1] == "25"}
+    x = np.array(range(1, len(subdict)+1))
+    y = np.array(list(subdict.values()))
     m,c = np.polyfit(x,y,1)
     return m, c
 
@@ -166,9 +199,9 @@ def calc_md(data):
             res = (data[key]['demanda']) - (data[key]['forecast'])
             errors.append(res)
         except ValueError:
-            print("")
+            continue
         except TypeError:
-            print("")
+            continue
     md = sum(errors)/len(errors) 
     return md
 
@@ -179,9 +212,9 @@ def calc_mad(data):
             res = abs((data[key]['demanda']) - (data[key]['forecast']))
             errors.append(res)
         except ValueError:
-            print("")
+            continue
         except TypeError:
-            print("")
+            continue
     mad = sum(errors)/len(errors) 
     return mad
 
@@ -192,9 +225,9 @@ def calc_mse(data):
             res = ((data[key]['demanda']) - (data[key]['forecast'])) ** 2
             errors.append(res)
         except ValueError:
-            print("")
+            continue
         except TypeError:
-            print("")
+            continue
     mse = sum(errors)/len(errors) 
     return mse
 
@@ -205,9 +238,9 @@ def calc_rmse(data):
             res = ((data[key]['demanda']) - (data[key]['forecast'])) ** 2
             errors.append(res)
         except ValueError:
-            print("")
+            continue
         except TypeError:
-            print("")
+            continue
     rmse = np.sqrt(sum(errors)/len(errors))
     return rmse
 
@@ -218,9 +251,9 @@ def calc_mpe(data):
             res = ((data[key]['demanda']) - (data[key]['forecast']))/(data[key]['demanda'])
             errors.append(res)
         except ValueError:
-            print("")
+            continue
         except TypeError:
-            print("")
+            continue
     mpe = sum(errors)/len(errors) 
     return mpe
 
@@ -231,9 +264,9 @@ def calc_mape(data):
             res = abs((data[key]['demanda']) - (data[key]['forecast']))/(data[key]['demanda'])
             errors.append(res)
         except ValueError:
-            print("")
+            continue
         except TypeError:
-            print("")
+            continue
     mape = sum(errors)/len(errors) 
     return mape
 
@@ -246,9 +279,9 @@ def calc_ts(data):
             errors.append(res)
             rsfe += (data[key]['demanda']) - (data[key]['forecast'])
         except ValueError:
-            print("")
+            continue
         except TypeError:
-            print("")
+            continue
     mad = sum(errors)/len(errors) 
     ts = rsfe/mad
     return ts
@@ -261,9 +294,9 @@ def grafico(data):
             y1.append(data[key]['demanda'])
             y2.append(data[key]['forecast'])
         except ValueError:
-            print("")
+            continue
         except TypeError:
-            print("")
+            continue
     x = range(1, len(y1)+1)
     plt.plot(x, y1, label='Demanda', color='blue', linestyle='-')
     plt.plot(x, y2, label='Forecast', color='red', linestyle='--')
@@ -273,3 +306,4 @@ def grafico(data):
 
     # 4. Display the graph
     plt.show()
+
