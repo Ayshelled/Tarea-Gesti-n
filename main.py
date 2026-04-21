@@ -4,7 +4,7 @@ from funciones import (
     data, promedio_movil, naive, acumulado, exponencial,
     weighted_moving_average, regresion, continueregression,
     calc_md, calc_mad, calc_mse, calc_rmse, calc_mpe, calc_mape, 
-    calc_ts, grafico
+    calc_ts, grafico, acumulado_no_restringido
 )
 
 def print_menu():
@@ -82,7 +82,7 @@ def option_d():
     print("\n[d] SUAVIZACIÓN EXPONENCIAL (Alpha=0.4)")
     print("(Usando como pronóstico inicial el método Naive para Dic-2024)")
     # Get naive forecast for initialization (last value of 12/24)
-    initial_forecast = data["12/24"]
+    initial_forecast = data["11/24"]
     forecast_data = exponencial(initial_forecast, 0.4, data)
     get_forecast_result("Suavización Exponencial (0.4)", forecast_data)
     print_errors("Suavización Exponencial (0.4)", forecast_data)
@@ -91,7 +91,7 @@ def option_e():
     """Exponential smoothing with alpha=0.6"""
     print("\n[e] SUAVIZACIÓN EXPONENCIAL (Alpha=0.6)")
     print("(Usando como pronóstico inicial el método Naive para Dic-2024)")
-    initial_forecast = data["12/24"]
+    initial_forecast = data["11/24"]
     forecast_data = exponencial(initial_forecast, 0.6, data)
     get_forecast_result("Suavización Exponencial (0.6)", forecast_data)
     print_errors("Suavización Exponencial (0.6)", forecast_data)
@@ -100,7 +100,8 @@ def option_f():
     """Exponential smoothing with alpha=0.5"""
     print("\n[f] SUAVIZACIÓN EXPONENCIAL (Alpha=0.5)")
     print("(Usando como pronóstico inicial el método Acumulado para Dic-2024)")
-    initial_forecast = data["12/24"]  # Using accumulated method
+    subdict = acumulado_no_restringido(data) 
+    initial_forecast = subdict["12/24"]['forecast']  # Using accumulated method
     forecast_data = exponencial(initial_forecast, 0.5, data)
     get_forecast_result("Suavización Exponencial (0.5)", forecast_data)
     print_errors("Suavización Exponencial (0.5)", forecast_data)
@@ -117,13 +118,14 @@ def option_h():
     """Linear regression"""
     print("\n[h] REGRESIÓN LINEAL")
     m, c = regresion(data)
+    subdict = {k: v for k, v in data.items() if k.split("/")[1] == "25"}
     print(f"Ecuación: y = {m:.4f}x + {c:.4f}")
     
     # Get original data
     print(f"\n{'Mes':<12} {'Demanda':<15} {'Pronóstico':<15}")
     print("-" * 42)
-    x_vals = list(range(1, len(data) + 1))
-    for i, (key, value) in enumerate(data.items()):
+    x_vals = list(range(1, len(subdict) + 1))
+    for i, (key, value) in enumerate(subdict.items()):
         forecast = x_vals[i] * m + c
         print(f"{key:<12} {value:<15} {forecast:<15.2f}")
     
@@ -137,14 +139,15 @@ def option_h():
 def option_i():
     """Calculate errors for all methods"""
     print("\n[i] CÁLCULO DE ERRORES PARA TODOS LOS MÉTODOS")
-    
+    subdict = acumulado_no_restringido(data) 
+    initial_forecast = subdict["12/24"]['forecast'] 
     methods = [
         ("Promedio Móvil (n=3)", promedio_movil(3, data)),
         ("Método Naive", naive(data)),
         ("Método Acumulado", acumulado(data)),
-        ("Suavización Exponencial (0.4)", exponencial(data["12/24"], 0.4, data)),
-        ("Suavización Exponencial (0.6)", exponencial(data["12/24"], 0.6, data)),
-        ("Suavización Exponencial (0.5)", exponencial(data["12/24"], 0.5, data)),
+        ("Suavización Exponencial (0.4)", exponencial(data["11/24"], 0.4, data)),
+        ("Suavización Exponencial (0.6)", exponencial(data["11/24"], 0.6, data)),
+        ("Suavización Exponencial (0.5)", exponencial(initial_forecast, 0.5, data)),
         ("Promedio Móvil Ponderado", weighted_moving_average([0.6, 0.4], data)),
     ]
     
@@ -168,7 +171,7 @@ def option_j():
     alphas = [0.3, 0.5, 0.7]
     
     for alpha in alphas:
-        forecast_data = exponencial(data["12/24"], alpha, data)
+        forecast_data = exponencial(data["11/24"], alpha, data)
         ts = calc_ts(forecast_data)
         print(f"\nAlpha={alpha}: TS = {ts:.4f}")
         
@@ -194,8 +197,8 @@ def option_k():
         "1": ("Promedio Móvil Simple", promedio_movil(3, data)),
         "2": ("Método Naive", naive(data)),
         "3": ("Método Acumulado", acumulado(data)),
-        "4": ("Suavización Exponencial (0.4)", exponencial(data["12/24"], 0.4, data)),
-        "5": ("Suavización Exponencial (0.6)", exponencial(data["12/24"], 0.6, data)),
+        "4": ("Suavización Exponencial (0.4)", exponencial(data["11/24"], 0.4, data)),
+        "5": ("Suavización Exponencial (0.6)", exponencial(data["11/24"], 0.6, data)),
         "6": ("Promedio Móvil Ponderado", weighted_moving_average([0.6, 0.4], data)),
     }
     
@@ -208,55 +211,39 @@ def option_k():
 def option_l():
     """Comparative analysis of all methods"""
     print("\n[l] ANÁLISIS COMPARATIVO DE TODOS LOS MÉTODOS")
-    
+    subdict = acumulado_no_restringido(data) 
+    initial_forecast = subdict["12/24"]['forecast'] 
     methods = [
         ("Promedio Móvil (n=3)", promedio_movil(3, data)),
         ("Método Naive", naive(data)),
         ("Método Acumulado", acumulado(data)),
-        ("Suavización Exponencial (0.4)", exponencial(data["12/24"], 0.4, data)),
-        ("Suavización Exponencial (0.6)", exponencial(data["12/24"], 0.6, data)),
-        ("Suavización Exponencial (0.5)", exponencial(data["12/24"], 0.5, data)),
+        ("Suavización Exponencial (0.4)", exponencial(data["11/24"], 0.4, data)),
+        ("Suavización Exponencial (0.6)", exponencial(data["11/24"], 0.6, data)),
+        ("Suavización Exponencial (0.5)", exponencial(initial_forecast, 0.5, data)),
         ("Promedio Móvil Ponderado", weighted_moving_average([0.6, 0.4], data)),
     ]
-    
-    # Calculate best method based on MAPE
-    print("\nCálculo de MAPE por método:")
-    print("-" * 50)
-    
-    best_method = None
-    best_mape = float('inf')
-    mapes = {}
-    
-    for method_name, forecast_data in methods:
-        mape = calc_mape(forecast_data)
-        mapes[method_name] = mape
-        print(f"{method_name:<35} MAPE: {mape:.4f}")
-        
-        if mape < best_mape:
-            best_mape = mape
-            best_method = method_name
-    
-    print("\n" + "="*50)
-    print(f"MEJOR MÉTODO: {best_method}")
-    print(f"MAPE más bajo: {best_mape:.4f}")
-    print("="*50)
+
+    error_metrics = ['MD', 'MAD', 'MSE', 'RMSE', 'MPE', 'MAPE']
+    for metric in error_metrics:
+        print(f"\n--- Mejor método según {metric} ---")
+        best_method(data, metric)
     
     # Create comparison graph
     print("\nGenerando gráfico comparativo...")
     plt.figure(figsize=(14, 8))
+    subdict2 = {k: v for k, v in data.items() if k.split("/")[1] == "25"}
+    x = range(1, len(subdict2) + 1)
     
-    x = range(1, len(data) + 1)
-    demanda = list(data.values())
+    demanda = list(subdict2.values())
     plt.plot(x, demanda, label='Demanda Real', color='black', linestyle='-', linewidth=2, marker='o')
     
     colors = ['blue', 'red', 'green', 'purple', 'orange', 'brown', 'pink']
     for (method_name, forecast_data), color in zip(methods, colors):
         forecasts = []
-        x_positions = []
+        x_positions = range(1, len(subdict2) + 1)
         for idx, key in enumerate(data.keys()):
             try:
                 forecasts.append(forecast_data[key]['forecast'])
-                x_positions.append(idx + 1)
             except (KeyError, TypeError):
                 pass
         
@@ -270,6 +257,52 @@ def option_l():
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
+
+def best_method(data, error_metric):
+    """Determine the best method based on each error metric"""
+    subdict = acumulado_no_restringido(data) 
+    initial_forecast = subdict["12/24"]['forecast'] 
+    methods = [
+        ("Promedio Móvil (n=3)", promedio_movil(3, data)),
+        ("Método Naive", naive(data)),
+        ("Método Acumulado", acumulado(data)),
+        ("Suavización Exponencial (0.4)", exponencial(data["11/24"], 0.4, data)),
+        ("Suavización Exponencial (0.6)", exponencial(data["11/24"], 0.6, data)),
+        ("Suavización Exponencial (0.5)", exponencial(initial_forecast, 0.5, data)),
+        ("Promedio Móvil Ponderado", weighted_moving_average([0.6, 0.4], data)),
+    ]
+    best_method = None
+    best_value = float('inf')
+    for method_name, forecast_data in methods:
+        if error_metric == 'MD':
+            value = calc_md(forecast_data)
+            print(f"{method_name}: MD = {value:.4f}")
+        elif error_metric == 'MAD':
+            value = calc_mad(forecast_data)
+            print(f"{method_name}: MAD = {value:.4f}")
+        elif error_metric == 'MSE':
+            value = calc_mse(forecast_data)
+            print(f"{method_name}: MSE = {value:.4f}")
+        elif error_metric == 'RMSE':
+            value = calc_rmse(forecast_data)
+            print(f"{method_name}: RMSE = {value:.4f}")
+        elif error_metric == 'MPE':
+            value = calc_mpe(forecast_data)
+            print(f"{method_name}: MPE = {value:.4f}")
+        elif error_metric == 'MAPE':
+            value = calc_mape(forecast_data)
+            print(f"{method_name}: MAPE = {value:.4f}")
+        else:
+            continue
+        
+        if abs(value) < abs(best_value):
+            best_value = value
+            best_method = method_name
+    print(f"\nMejor método según {error_metric}: {best_method} con valor {best_value:.4f}")
+
+
+
+
 
 def main():
     """Main function with menu"""
@@ -303,7 +336,7 @@ def main():
             elif option == 'l':
                 option_l()
             elif option == 's':
-                print("\n¡Hasta luego!")
+                print("\nFin")
                 break
             else:
                 print("Opción no válida. Por favor, ingrese a-l o s.")
