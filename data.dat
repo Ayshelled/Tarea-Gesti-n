@@ -1,0 +1,23 @@
+data = {
+    2024: {
+        "Agosto": 17000,
+        "Septiembre": 8230,
+        "Octubre": 5603,
+        "Noviembre": 4000,
+        "Diciembre": 5000
+    },
+    2025: {
+        "Enero": 3049,
+        "Febrero": 3840,
+        "Marzo": 5776,
+        "Abril": 8203,
+        "Mayo": 4563,
+        "Junio": 5569,
+        "Julio": 7033,
+        "Agosto": 7364,
+        "Septiembre": 4503,
+        "Octubre": None,
+        "Noviembre": None,
+        "Diciembre": None
+    }
+}
